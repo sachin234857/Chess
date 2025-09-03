@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chess Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- ✅ Correct chess.js link -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+</head>
+<body>
+    <h1>♟ Chess Game (Legal Moves)</h1>
+    <div id="chessboard"></div>
+    <p id="status"></p>
+
+    <script>
+        const pieces = {
+            "r": "♜", "n": "♞", "b": "♝", "q": "♛", "k": "♚", "p": "♟",
+            "R": "♖", "N": "♘", "B": "♗", "Q": "♕", "K": "♔", "P": "♙"
+        };
+
+        const chess = new Chess();  // ✅ starts at default position
+        const chessboard = document.getElementById("chessboard");
+        let selected = null;
+
+        function drawBoard() {
+            chessboard.innerHTML = "";
+            const board = chess.board();
+
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement("div");
+                    square.classList.add("square");
+                    square.classList.add((row + col) % 2 === 0 ? "light" : "dark");
+
+                    const piece = board[row][col];
+                    if (piece) {
+                        const symbol = piece.type;
+                        const char = piece.color === "w" ? symbol.toUpperCase() : symbol;
+                        square.textContent = pieces[char];
+                        square.classList.add(piece.color === "w" ? "white-piece" : "black-piece");
+                    }
+
+                    const squareName = String.fromCharCode(97 + col) + (8 - row);
+                    square.dataset.square = squareName;
+                    square.onclick = () => handleClick(squareName, row, col);
+                    chessboard.appendChild(square);
+                }
+            }
+            updateStatus();
+        }
+
+        function handleClick(squareName, row, col) {
+            if (!selected) {
+                const moves = chess.moves({ square: squareName, verbose: true });
+                if (moves.length > 0) {
+                    selected = squareName;
+                    highlightSquare(row, col);
+                }
+            } else {
+                const move = chess.move({ from: selected, to: squareName, promotion: "q" });
+                selected = null;
+                drawBoard();
+            }
+        }
+
+        function highlightSquare(row, col) {
+            const index = row * 8 + col;
+            chessboard.children[index].classList.add("selected");
+        }
+
+        function updateStatus() {
+            let moveColor = chess.turn() === "w" ? "White" : "Black";
+            let status = moveColor + " to move";
+
+            if (chess.in_checkmate()) status = "Checkmate! " + (moveColor === "White" ? "Black" : "White") + " wins.";
+            else if (chess.in_draw()) status = "Game drawn.";
+            else if (chess.in_check()) status += " (in check)";
+
+            document.getElementById("status").textContent = status;
+        }
+
+        drawBoard();
+    </script>
+</body>
+</html>
